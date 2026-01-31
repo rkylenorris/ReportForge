@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/dotnet/">
+    <Project Path="src/dotnet/ReportForge.Config/ReportForge.Config.csproj" />
+    <Project Path="src/dotnet/ReportForge.Core/ReportForge.Core.csproj" />
+  </Folder>
+</Solution>

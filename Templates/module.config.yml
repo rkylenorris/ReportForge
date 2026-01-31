@@ -1,0 +1,86 @@
+# MyModule - module-level configuration (non-secret defaults + env references)
+# This file is intended to live in the user config home, e.g.:
+#   Windows: %APPDATA%\MyModule\module.config.yml
+#   Linux/macOS: ~/.config/mymodule/module.config.yml
+#
+# Secrets should NOT be stored in this YAML.
+# Use a separate env file (recommended):
+#   Windows: %APPDATA%\MyModule\secrets.env
+#   Linux/macOS: ~/.config/mymodule/secrets.env
+#
+# Env precedence (v1 recommended):
+#   Report env > Module secrets.env > Process env
+
+version: 1
+
+module:
+  # Human-friendly identity used in manifests/log headers; does not affect module name.
+  display_name: "MyModule"
+  # Optional: used for locating the user config home folder on some platforms.
+  config_folder_name: "MyModule"
+
+branding:
+  # Optional metadata you can inject into exported artifacts / manifests.
+  organization: "Your Org"
+  product_line: "Reporting"
+  contact: "data-team@your-org.example"
+  # Optional: small image path or URL could be supported later; keep v1 as string.
+  logo_ref: null
+
+templates:
+  # Root folder for standard templates (can be absolute or env-interpolated).
+  # You can set this via process env or secrets.env:
+  #   MYMODULE_TEMPLATES_ROOT=C:\Reports\Templates
+  root: "${MYMODULE_TEMPLATES_ROOT}"
+
+  # A small catalog of standard templates with metadata.
+  # Path can be absolute, relative to templates.root, or env-interpolated.
+  catalog:
+    - id: "std-monthly-ops"
+      name: "Standard Monthly Ops"
+      description: "Default monthly ops report template"
+      path: "${MYMODULE_TEMPLATES_ROOT}/MonthlyOps.xlsx"
+      tags: ["ops", "monthly", "standard"]
+
+    - id: "std-weekly-kpi"
+      name: "Standard Weekly KPI"
+      description: "Weekly KPI rollup template"
+      path: "${MYMODULE_TEMPLATES_ROOT}/WeeklyKPI.xlsx"
+      tags: ["kpi", "weekly", "standard"]
+
+connections:
+  # Commonly used database connection aliases (no passwords here).
+  #
+  # Recommended: keep usernames/passwords in module secrets.env (or process env),
+  # then reference them by name here.
+  #
+  # Example secrets.env entries:
+  #   OPS_SQL_SERVER=sql01.corp.local
+  #   OPS_SQL_DATABASE=OpsWarehouse
+  #   OPS_SQL_USERNAME=report_user
+  #   OPS_SQL_PASSWORD=...
+  #
+  - name: "OpsWarehouse"
+    type: "sqlserver"
+    server: "${OPS_SQL_SERVER}"
+    database: "${OPS_SQL_DATABASE}"
+    auth:
+      mode: "env"                 # integrated | env
+      username_env: "OPS_SQL_USERNAME"
+      password_env: "OPS_SQL_PASSWORD"
+
+  - name: "FinanceDW"
+    type: "sqlserver"
+    server: "${FIN_SQL_SERVER}"
+    database: "${FIN_SQL_DATABASE}"
+    auth:
+      mode: "integrated"          # uses Windows/domain auth; no secrets needed
+
+defaults:
+  # Optional default behaviors a report config can inherit if it omits values.
+  logging:
+    level: "info"                 # trace | debug | info | warn | error
+    ndjson: true
+  output:
+    folder_name: "output"
+    overwrite: false
