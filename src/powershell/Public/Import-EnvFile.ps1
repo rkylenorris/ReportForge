@@ -11,6 +11,7 @@ function Import-EnvVariables {
         if (Test-Path $envPath) {
             # define regex pattern for finding keys and values
             $pattern = "^\s*([^=]+)\s*=\s*(.+)\s*$"
+            $keyPattern = "^[A-Z_][A-Z0-9_]*$"
             # import the .env contents           
             $envContent = Get-Content $envPath -Raw
             if ($envContent) {
