@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace ReportForge.Config;
 
-public class ConvertString
+public class ConvertEnvString
 {
     public static object ToCorrectType(string input)
     {

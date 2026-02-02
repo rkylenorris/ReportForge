@@ -20,14 +20,16 @@ public class EnvFileReader
     }
 }
 
-// ...existing code...
-public partial class EnvFile
+public partial class EnvFileRegex
+{
+    [GeneratedRegex(@"^\s*([^=]+)\s*=\s*(.+)\s*$", RegexOptions.None, "en-US")]
+    public static partial Regex KeyVal();
+}
+
+public class EnvFile
 {
     public string Path { get; private set; }
     public System.Collections.Generic.IDictionary<string, object> Variables { get; private set; }
-
-    [GeneratedRegex(@"^\s*([^=]+)\s*=\s*(.+)\s*$", RegexOptions.None, "en-US")]
-    private static partial Regex KeyValRegex();
 
     public EnvFile(string path)
     {
@@ -49,12 +51,12 @@ public partial class EnvFile
 
             string keyVal = line.Trim();
 
-            var m = KeyValRegex().Match(keyVal);
+            var m = EnvFileRegex.KeyVal().Match(keyVal);
             if (m.Success)
             {
                 var key = m.Groups[1].Value.Trim();
                 var value = m.Groups[2].Value.Trim().Trim('"', '\'');
-                dict[key] = ConvertString.ToCorrectType(value)!;
+                dict[key] = ConvertEnvString.ToCorrectType(value)!;
             }
         }
 
@@ -64,13 +66,13 @@ public partial class EnvFile
 
 public class EnvGlobals
 {
-    public static System.Collections.Generic.Dictionary<string, string?> Variables { get; } = Environment.GetEnvironmentVariables()
+    public static System.Collections.Generic.Dictionary<string, object> Variables { get; } = Environment.GetEnvironmentVariables()
         .Cast<System.Collections.DictionaryEntry>()
-        .ToDictionary(e => (string)e.Key!, e => e.Value as string);
+        .ToDictionary(e => (string)e.Key!, e => ConvertEnvString.ToCorrectType((string)e.Value!)!);
 
 }
 
-public class Env
+public class ReportForgeEnv
 {
 
 }
