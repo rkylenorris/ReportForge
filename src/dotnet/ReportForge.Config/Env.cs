@@ -74,5 +74,5 @@ public class EnvGlobals
 
 public class ReportForgeEnv
 {
-
+    // TODO: Merge multiple env files and globals
 }
