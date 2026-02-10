@@ -29,7 +29,7 @@ public partial class EnvFileRegex
 public class EnvFile
 {
     public string Path { get; private set; }
-    public System.Collections.Generic.IDictionary<string, object> Variables { get; private set; }
+    public System.Collections.Generic.Dictionary<string, object> Variables { get; private set; }
 
     public EnvFile(string path)
     {
@@ -74,5 +74,26 @@ public class EnvGlobals
 
 public class ReportForgeEnv
 {
-    // TODO: Merge multiple env files and globals
+    public System.Collections.Generic.Dictionary<string, object> Variables { get; private set; }
+
+    public ReportForgeEnv(string? envFilePath)
+    {
+        if (string.IsNullOrEmpty(envFilePath))
+        {
+            Variables = new System.Collections.Generic.Dictionary<string, object>(EnvGlobals.Variables, StringComparer.OrdinalIgnoreCase);
+            return;
+        }
+
+        var envFile = new EnvFile(envFilePath);
+        Variables = new System.Collections.Generic.Dictionary<string, object>(envFile.Variables, StringComparer.OrdinalIgnoreCase);
+
+        // Merge with system environment variables, giving precedence to the env file
+        foreach (var kvp in EnvGlobals.Variables)
+        {
+            if (!Variables.ContainsKey(kvp.Key))
+            {
+                Variables[kvp.Key] = kvp.Value;
+            }
+        }
+    }
 }
