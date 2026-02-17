@@ -3,5 +3,6 @@
   <Folder Name="/src/dotnet/">
     <Project Path="src/dotnet/ReportForge.Config/ReportForge.Config.csproj" />
     <Project Path="src/dotnet/ReportForge.Core/ReportForge.Core.csproj" />
+    <Project Path="src/dotnet/ReportForge.Logger/ReportForge.Logger.csproj" />
   </Folder>
 </Solution>
