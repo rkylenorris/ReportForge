@@ -10,15 +10,15 @@ ReportForge is a PowerShell-first reporting automation tool designed to generate
 
 ### 1.1 Core Philosophy
 
-- **Orchestration vs. Engine:** PowerShell handles UX, CLI, and flow control; C# (.NET 8) handles performance-critical logic (Excel/Parquet generation) and strict configuration parsing.  
-- **Resume-Grade Quality:** Emphasizes strict typing, DTOs (Data Transfer Objects), validation, structured logging, and CI/CD over ad-hoc scripting.  
-- **Fail-Fast:** Configuration and schema errors must stop execution before any data is written.
+- **Orchestration vs. Engine:** PowerShell handles CLI and flow control; C# (.NET 10) handles performance-critical logic (Excel/Parquet generation, SQL Querying, .env Secrets) and strict configuration parsing (with interpolation of environment secrets into configuration place holders).  
+- **Resume-Grade Quality:** Emphasizes strict typing, DTOs (Data Transfer Objects), validation, structured logging, documentation, and CI/CD over ad-hoc scripting.  
+- **Fail-Fast:** Configuration and schema errors must stop execution before any data is written. Moreover, each namespace should contain its own custom Exceptions to throw relevant to what its doing.
 
 ### 1.2 Scope & Non-Goals
 
 **In Scope (v1):**
 
-- SQL Server data sources (Integrated Auth \+ SQL Login via Environment Variables).  
+- SQL Server data sources (Integrated Auth | SQL Login via Environment Variables).  
 - Excel generation using pre-defined .xlsx templates (ClosedXML).  
 - Parquet export for Power BI ingestion.  
 - Run metadata (Manifest) and Data Dictionary generation.  
