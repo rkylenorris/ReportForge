@@ -40,27 +40,34 @@ The project follows a strict separation between source code and build artifacts 
 ```bash
 ReportForge/  
 ├── ReportForge.psd1           # Root Module Manifest  
-├── ReportForge.psm1           # Root Module Loader (loads DLLs + scripts)  
+├── ReportForge.psd1      # Root Module Loader (loads DLLs + scripts)  
+├── ReportForge.slnx           # C# Project Solution File
+├── Documentation/
 ├── src/  
 │   ├── dotnet/                # C# Solution (Core, Excel, Parquet)  
-│   │   ├── ReportForge.Core/  
+│   │   ├── ReportForge.Config/ 
+│   │   ├── ReportForge.Logger/ 
+│   │   ├── ReportForge.Data/  # Contains SQL connection & query logic. Generically named for future connection types
+│   │   ├── ReportForge.Parquet/    
 │   │   ├── ReportForge.Excel/  
-│   │   └── ReportForge.Parquet/  
+│   │   └── ReportForge.Core/
 │   └── powershell/            # PowerShell Source (Public/Private functions)  
 ├── Output/                    # Compiled Build Artifacts (Mirror of published module)  
 │   └── ReportForge/  
 │       ├── Assemblies/        # Compiled DLLs + Dependencies (ClosedXML, YamlDotNet)  
-│       └── ...  
-└── Tests/                     # Pester Tests
+│       └── ...        # all of the folders under src/powershell plus the .psd1 and .psm1 files
+└── Tests/                     # Pester Tests, C# Tests
 ```
 
 ### 2.2 Technology Stack
 
 - **Orchestration:** PowerShell 7+ (cross-platform compatible).  
 - **Runtime:** .NET 10.  
-- **Configuration Parsing:** C# using YamlDotNet (deserialized to strong DTOs)  
+- **Logging:** Custom C# class library creating simple, custom Logger class.
+- **Configuration Parsing:** C# using YamlDotNet (deserialized to strong DTOs).  
 - **Excel Engine:** C# library wrapping ClosedXML.  
 - **Parquet Engine:** C# library wrapping Parquet.Net.
+- **SQL Server Querying:** C# library utilizing Microsoft.Data.SqlClient (*new standard over System.Data.SqlClient*).
 
 ## 3. Functional Requirements
 
@@ -86,11 +93,12 @@ ReportForge/
 ### 3.2 Configuration & Secrets
 
 - **Configuration**:  
-  - Split into **Module Global Config** (user defaults) and **Report Specific Config** (per report)  
+  - Split into **Default Logger Config** (for before configs are loaded), **Module Global Config** (user defaults), and **Report Specific Config** (per report)  
+    - **Default Logger Config**: Contains default values for building `Logger` instance, like loglevel, enable console, structured logging, a default dev setting that auto-includes verbose.
     - **Module Global Config**: Contains non-secret defaults and reusable connection aliases  
     - **Report Specific Config:** Contains fields for run, source, auth, datasets, excel, mappings, exports  
   - **Schema Requirements:**  
-    - Format: Yaml  
+    - Format: Yaml except Default Logger, it is JSON to simplify loading.
     - Parsing: Handled in C# to map directly to DTOs.  
   - **Validation Rules:**  
     - Required fields: version, source, datasets, excel.template_path.  
@@ -104,7 +112,19 @@ ReportForge/
     - Process Environment Variables.  
   - **Safety:** Resolved secrets exist only in memory (C# SecureString or transient connection string) and are *never* logged.
 
-### 3.3 Data Pipeline
+### 3.3 Logging: Console & Structured Output NDJSON
+
+Logging will be implemented in C#, ReportForge.Logger Namespace.
+
+- `LogLevel` Enum
+- `ILogger` Interface
+- `ConsoleSink : ILogger` Implementation
+- `FileSink : ILogger` Implementation (writes the structured json log or flat file like csv or other delimited, tabular format)
+- `Logger : ILogger` Implementation, combining the two sinks in its method implementations for a unified logging experience.
+
+`Logger` instance can be made global for easy access from PowerShell for its logger wrapper for additional logging.
+
+### 3.4 Data Pipeline
 
 - **Ingestion:** Execute SQL queries defined in config. Capture row counts and execution duration.  
 - **Type Mapping:** Enforce strict C# -> Parquet type mapping (e.g., SQL decimal -> .NET decimal; SQL bit -> bool).  
@@ -122,7 +142,42 @@ ReportForge/
 
 ## 4. Configuration Schema Specification
 
-### 4.1 Report Config (report.yaml)
+### 4.1 Default Logger Config (logging.config.json)
+
+In order to facilitate logging before report-level configurations or module-level ones have been processed, a default logging configuration is provided.
+
+This file is intended to live in the user config home, e.g.:  
+
+- Windows: %APPDATA%\\ReportForge\\logging.config.json
+- Linux/macOS: ~/.config/reportforge/logging.config.json  
+
+```json
+{
+  "LogName": "report_forge.log",
+  "DefaultLevel": "Info",
+  "EnableConsole": true,
+  "StructuredLogging": {
+    "Enabled": true,
+    "Format": "NDJSON",
+    "DefaultLogPath": "./logs/structured/"
+  },
+  "DelimitedLogging": {
+    "Enabled": true,
+    "Format": "flat",
+    "Delimiter": "|",
+    "DefaultLogPath": "./logs/delimited/"
+  },
+  "Development": {
+    "Enabled": true,
+    "Verbose": true,
+    "IncludeStackTrace": true
+  }
+}
+```
+
+After the other `yaml` configuration files are loaded and resolved, the program will check those configurations for default overwrites. Usually at least the log name is changed to the same as the report title.
+
+### 4.2 Report Config (report.yaml)
 
 The source of truth for a specific run.  
 
@@ -162,15 +217,20 @@ exports:
   enabled: true  
   format: "parquet"  
   dictionary: true
+
+logging:
+  log_name: "MonthlySales.log"
+  enable_console: false
+  
 ```
 
-### 4.2 Module Config (module.config.yaml)
+### 4.3 Module Config (module.config.yaml)
 
 - Stored in `%APPDATA%\\ReportForge\\` (Windows) or `~/.config/reportforge/` (Linux).
 - Contains non-secret defaults and reusable connection aliases.  
 
 ```yaml
-# ReportForge \- module-level configuration (non-secret defaults \+ env references)  
+# ReportForge - module-level configuration (non-secret defaults + env references)  
 # This file is intended to live in the user config home, e.g.:  
 #   Windows: %APPDATA%\\ReportForge\\module.config.yaml  
 #   Linux/macOS: ~/.config/reportforge/module.config.yaml  
@@ -249,10 +309,7 @@ connections:
       mode: "integrated"          # uses Windows/domain auth; no secrets needed
 
 defaults:  
-  # Optional default behaviors a report config can inherit if it omits values.  
-  logging:  
-    level: "info"                 # trace | debug | info | warn | error  
-    ndjson: true  
+  # Optional default behaviors a report config can inherit if it omits values.
   output:  
     folder_name: "output"  
     overwrite: false
@@ -309,3 +366,5 @@ The project is considered V1.0 complete only when the following are satisfied:
   - But it wouldn't be limited to just linking to some other place the report lives
   - Could add our own custom web app capable of displaying the reports and dashes and available BI tools on its own domain.
   - Basically, this PowerShell module is just the beginning, a stepping stone, towards possibly developing a robust and open-source BI web and software platform.
+
+> Last Updated: 02/17/2026 08:03 AM EST
