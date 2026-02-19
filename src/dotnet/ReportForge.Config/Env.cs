@@ -1,24 +1,7 @@
-using System;
 using System.Collections;
-using System.IO;
 using System.Text.RegularExpressions;
-using YamlDotNet.Core;
-
-
 
 namespace ReportForge.Config;
-
-public class EnvFileReader
-{
-    public static string[] Load(string path)
-    {
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException($"Env file not found at path: {path}");
-        }
-        return File.ReadAllLines(path);
-    }
-}
 
 public partial class EnvFileRegex
 {
@@ -29,18 +12,56 @@ public partial class EnvFileRegex
 public class EnvFile
 {
     public string Path { get; private set; }
-    public System.Collections.Generic.Dictionary<string, object> Variables { get; private set; }
+    public string Name { get; private set; }
+    public string RunEnvironment { get; private set; }
+    public Dictionary<string, object> Variables { get; private set; }
 
     public EnvFile(string path)
     {
-        Path = path;
-        Variables = Parse();
+        Path = VerifyPath(path);
+        string[] pathParts = Path.Split("//");
+        Name = pathParts[pathParts.Length - 1];
+        RunEnvironment = GetRunEnvironmentFromFile();
+        Variables = ParseFile();
     }
 
-    private System.Collections.Generic.Dictionary<string, object> Parse()
+    private string VerifyPath(string path)
     {
-        var lines = EnvFileReader.Load(this.Path);
-        var dict = new System.Collections.Generic.Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(Path))
+        {
+            throw new FileNotFoundException($"Env file not found at path: {Path}");
+        }
+        else
+        {
+            return path;
+        }
+    }
+
+    private string GetRunEnvironmentFromFile()
+    {
+        string[] possibleEnvs = ["dev", "test", "prod"];
+        string runEnv = string.Empty;
+
+        if (Name.Contains('.'))
+        {
+            runEnv = Name.Split(".")[0];
+            if (possibleEnvs.Contains<string>(runEnv))
+            {
+                return runEnv;
+            }
+            else
+            {
+                runEnv = "dev";
+            }
+        }
+
+        return runEnv;
+    }
+
+    private Dictionary<string, object> ParseFile()
+    {
+        var lines = File.ReadAllLines(Path);
+        var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var line in lines)
         {
@@ -54,9 +75,14 @@ public class EnvFile
             var m = EnvFileRegex.KeyVal().Match(keyVal);
             if (m.Success)
             {
-                var key = m.Groups[1].Value.Trim();
-                var value = m.Groups[2].Value.Trim().Trim('"', '\'');
+                string key = m.Groups[1].Value.Trim();
+                string value = m.Groups[2].Value.Trim().Trim('"', '\'');
                 dict[key] = ConvertEnvString.ToCorrectType(value)!;
+            }
+            else
+            {
+                Console.WriteLine($"Invalid entry in env file {Name}, entry: {keyVal}");
+                // Change to log statement after logging namespace is finished.
             }
         }
 
@@ -64,36 +90,67 @@ public class EnvFile
     }
 }
 
-public class EnvGlobals
+public class ModuleEnvFile : EnvFile
 {
-    public static System.Collections.Generic.Dictionary<string, object> Variables { get; } = Environment.GetEnvironmentVariables()
-        .Cast<System.Collections.DictionaryEntry>()
+    public string Type = "module";
+
+    public ModuleEnvFile(string path) : base(path)
+    {
+
+    }
+}
+
+public class ReportEnvFile : EnvFile
+{
+    public string Type = "report";
+
+    public ReportEnvFile(string path) : base(path)
+    {
+
+    }
+}
+
+public static class EnvGlobals
+{
+    public static Dictionary<string, object> Variables { get; } = Environment.GetEnvironmentVariables()
+        .Cast<DictionaryEntry>()
         .ToDictionary(e => (string)e.Key!, e => ConvertEnvString.ToCorrectType((string)e.Value!)!);
 
 }
 
 public class ReportForgeEnv
 {
-    public System.Collections.Generic.Dictionary<string, object> Variables { get; private set; }
+    public Dictionary<string, object> Variables { get; private set; }
 
-    public ReportForgeEnv(string? envFilePath)
+    public ReportForgeEnv()
     {
-        if (string.IsNullOrEmpty(envFilePath))
+        Variables = EnvGlobals.Variables;
+    }
+
+    public ReportForgeEnv(ModuleEnvFile moduleEnv)
+    {
+        Variables = EnvGlobals.Variables;
+
+        foreach (var kvp in moduleEnv.Variables)
         {
-            Variables = new System.Collections.Generic.Dictionary<string, object>(EnvGlobals.Variables, StringComparer.OrdinalIgnoreCase);
-            return;
+            Variables[kvp.Key] = kvp.Value;
         }
 
-        var envFile = new EnvFile(envFilePath);
-        Variables = new System.Collections.Generic.Dictionary<string, object>(envFile.Variables, StringComparer.OrdinalIgnoreCase);
+    }
 
-        // Merge with system environment variables, giving precedence to the env file
-        foreach (var kvp in EnvGlobals.Variables)
+    public ReportForgeEnv(ModuleEnvFile moduleEnv, ReportEnvFile reportEnv)
+    {
+        Variables = EnvGlobals.Variables;
+
+        foreach (var kvp in moduleEnv.Variables)
         {
-            if (!Variables.ContainsKey(kvp.Key))
-            {
-                Variables[kvp.Key] = kvp.Value;
-            }
+            Variables[kvp.Key] = kvp.Value;
         }
+
+        foreach (var kvp in reportEnv.Variables)
+        {
+            Variables[kvp.Key] = kvp.Value;
+        }
+
     }
 }
