@@ -1,7 +1,7 @@
 {
     "project": "ReportForge",
     "version": "1.0",
-    "last_updated": "2026-02-17T17:02",
+    "last_updated": "2026-02-23T12:15",
     "sections": [
         {
             "name": "System Architecture",
@@ -36,38 +36,52 @@
                 },
                 {
                     "ordinal": 2,
-                    "name": "Configuration & Secrets System",
-                    "description": "Implement YAML-based config parsing with ${VAR_NAME} environment interpolation.",
-                    "status": "InProgress",
-                    "last_updated": "2026-02-17T17:02"
+                    "name": "Environment Variables System",
+                    "description": "Implement Environment variables classes, combining system, module, and report level vars into 1 class.",
+                    "status": "Complete",
+                    "last_updated": "2026-02-23T12:15"
                 },
                 {
                     "ordinal": 3,
+                    "name": "Artifact Generation",
+                    "description": "Automatic generation of manifest.json and data_dictionary.csv.",
+                    "status": "Complete",
+                    "last_updated": "2026-02-23T12:15"
+                },
+                {
+                    "ordinal": 4,
+                    "name": "Logging",
+                    "description": "Simple logging module for console and file sinks.",
+                    "status": "InProgress",
+                    "last_updated": "2026-02-23T12:15"
+                },
+                {
+                    "ordinal": 5,
+                    "name": "Configuration & Secrets System",
+                    "description": "Implement YAML-based config parsing with ${VAR_NAME} environment interpolation.",
+                    "status": "InProgress",
+                    "last_updated": "2026-02-23T12:15"
+                },
+                {
+                    "ordinal": 6,
                     "name": "SQL Ingestion Pipeline",
                     "description": "Execute SQL queries and capture row counts and execution metrics.",
                     "status": "NotStarted",
                     "last_updated": "2026-02-10T12:00"
                 },
                 {
-                    "ordinal": 4,
+                    "ordinal": 7,
                     "name": "Excel Engine (ClosedXML)",
                     "description": "Map DataTables to Excel anchors while preserving formulas/styles.",
                     "status": "NotStarted",
                     "last_updated": "2026-02-10T12:00"
                 },
                 {
-                    "ordinal": 5,
+                    "ordinal": 8,
                     "name": "Parquet Export Engine",
                     "description": "Implement Parquet.Net for stable schema exports to Power BI.",
                     "status": "NotStarted",
                     "last_updated": "2026-02-10T12:00"
-                },
-                {
-                    "ordinal": 6,
-                    "name": "Artifact Generation",
-                    "description": "Automatic generation of manifest.json and data_dictionary.csv.",
-                    "status": "InProgress",
-                    "last_updated": "2026-02-17T17:02"
                 }
             ]
         },
