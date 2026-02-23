@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace ReportForge.Config;
+namespace ReportForge.Config.Environment;
 
 public class ConvertEnvString
 {

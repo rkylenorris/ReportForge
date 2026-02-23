@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Text.RegularExpressions;
 
-namespace ReportForge.Config;
+namespace ReportForge.Config.Environment;
 
 public partial class EnvFileRegex
 {
@@ -112,7 +112,7 @@ public class ReportEnvFile : EnvFile
 
 public static class EnvGlobals
 {
-    public static Dictionary<string, object> Variables { get; } = Environment.GetEnvironmentVariables()
+    public static Dictionary<string, object> Variables { get; } = System.Environment.GetEnvironmentVariables()
         .Cast<DictionaryEntry>()
         .ToDictionary(e => (string)e.Key!, e => ConvertEnvString.ToCorrectType((string)e.Value!)!);
 

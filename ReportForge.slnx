@@ -5,6 +5,9 @@
     <Project Path="src/dotnet/ReportForge.Core/ReportForge.Core.csproj" />
     <Project Path="src/dotnet/ReportForge.Logging/ReportForge.Logging.csproj" />
   </Folder>
+  <Folder Name="/src/dotnet/ReportForge.Config/">
+    <Project Path="src/dotnet/ReportForge.Config/ReportForge.Config.Environment/ReportForge.Config.Environment.csproj" />
+  </Folder>
   <Folder Name="/src/dotnet/ReportForge.Logging/">
     <Project Path="src/dotnet/ReportForge.Logging/ReportForge.Logging.Metadata/ReportForge.Logging.Metadata.csproj" />
   </Folder>
