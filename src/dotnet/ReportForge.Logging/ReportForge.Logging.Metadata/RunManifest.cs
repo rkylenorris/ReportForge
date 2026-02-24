@@ -112,7 +112,7 @@ public class DatasetMetric
         RowCount = rowCount;
         DurationMs = queryDurationMs;
         ParquetPath = Path.Join(outputDir, string.Format("{0}.parquet", FileFriendlyName));
-        SchemaHash = schemaHash;
+        SchemaHash = schemaHash; // TODO: refactor to include fact that need to get previous hash before new hash is created.
     }
 
     private string GetPreviousSchemaHash(string outputDir)
