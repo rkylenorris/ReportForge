@@ -2,6 +2,8 @@
 
 > *in initial development*
 
+> ***shift in project direction, changing version to 1.5 and moving towards SQLite and an Orchestrator functionality. README content will be updated soon -R. Kyle Norris 2/24/2026***
+
 ## Summary
 
 `ReportForge` V1.0 is a PowerShell module for creating and automating sql-based, excel reporting. The module leverages the easy interoperability of PowerShell and C#, using some third-party C# libraries within a custom created C# DLL to create the majority of the module's functionality. PowerShell serves as a CLI wrapper for the classes from the custom DLL; end-users do not interact with these C# objects directly, instead they utilize the PowerShell module public Cmdlets.
